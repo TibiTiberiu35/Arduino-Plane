@@ -107,7 +107,7 @@ void printData() {
 }
 
 void rotateMotor() {
-  escMotor.write(111);
+  escMotor.write(172);
   delay(15);
 }
 
