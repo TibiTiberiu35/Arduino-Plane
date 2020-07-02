@@ -27,7 +27,9 @@ float euler[3];         // [psi, theta, phi]    Euler angle container
 float ypr[3];           // [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector
 
 int servoCarmaUnghi = 90;
+int servoFlapsuriUnghi = 90;
 float limitaCarma = 0.02;
+float limitaFlapsuri = 0.07;
 
 // ================================================================
 // ===                      INITIAL SETUP                       ===
@@ -78,7 +80,6 @@ void setup() {
     // ERROR!
     // 1 = initial memory load failed
     // 2 = DMP configuration updates failed
-    // (if it's going to break, usually the code will be 1)
     Serial.print(F("DMP Initialization failed (code "));
     Serial.print(devStatus);
     Serial.println(F(")"));
@@ -110,6 +111,7 @@ void loop() {
 
   rotireMotor();
   rotireCarma();
+  rotireFlapsuri();
 }
 
 void rotireCarma() {
@@ -124,8 +126,18 @@ void rotireCarma() {
   servoCarma.write(servoCarmaUnghi);
 }
 
+void rotireFlapsuri() {
+  if (ypr[1] > limitaFlapsuri) {
+    servoFlapsuriUnghi = 45;
+  } else if (ypr[1] < -limitaFlapsuri) {
+    servoFlapsuriUnghi = 135;
+  } else {
+    servoFlapsuriUnghi = 90;
+  }
+
+  servoFlapsuri.write(servoFlapsuriUnghi);
+}
+
 void rotireMotor() {
-  escMotor.write(120);
-  delay(5000);
-  escMotor.detach();
+  escMotor.write(115);
 }

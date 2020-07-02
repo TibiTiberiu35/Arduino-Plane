@@ -19,15 +19,16 @@ uint8_t fifoBuffer[128]; // FIFO storage buffer
 
 // orientation/motion vars
 Quaternion q;           // [w, x, y, z]         quaternion container
-VectorInt16 aa;         // [x, y, z]            accel sensor measurements
-VectorInt16 aaReal;     // [x, y, z]            gravity-free accel sensor measurements
-VectorInt16 aaWorld;    // [x, y, z]            world-frame accel sensor measurements
 VectorFloat gravity;    // [x, y, z]            gravity vector
 float euler[3];         // [psi, theta, phi]    Euler angle container
 float ypr[3];           // [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector
 
+unsigned int startMillis;
+unsigned int currentMillis;
 int servoCarmaUnghi = 90;
+int servoFlapsuriUnghi = 90;
 float limitaCarma = 0.02;
+float limitaFlapsuri = 0.07;
 
 // ================================================================
 // ===                      INITIAL SETUP                       ===
@@ -42,6 +43,7 @@ void setup() {
   servoCarma.write(servoCarmaUnghi);
   servoFlapsuri.attach(9);
   escMotor.attach(12);
+
   while (!Serial); // wait for Leonardo enumeration, others continue immediately
 
   // initialize device
@@ -78,11 +80,13 @@ void setup() {
     // ERROR!
     // 1 = initial memory load failed
     // 2 = DMP configuration updates failed
-    // (if it's going to break, usually the code will be 1)
     Serial.print(F("DMP Initialization failed (code "));
     Serial.print(devStatus);
     Serial.println(F(")"));
   }
+
+  escMotor.write(120);
+  startMillis = millis();
 }
 
 
@@ -108,8 +112,11 @@ void loop() {
 #endif
   }
 
+  currentMillis = millis();
+
   rotireMotor();
   rotireCarma();
+  rotireFlapsuri();
 }
 
 void rotireCarma() {
@@ -124,8 +131,25 @@ void rotireCarma() {
   servoCarma.write(servoCarmaUnghi);
 }
 
+void rotireFlapsuri() {
+  if (ypr[1] > limitaFlapsuri) {
+    servoFlapsuriUnghi = 45;
+  } else if (ypr[1] < -limitaFlapsuri) {
+    servoFlapsuriUnghi = 135;
+  } else {
+    servoFlapsuriUnghi = 90;
+  }
+
+  servoFlapsuri.write(servoFlapsuriUnghi);
+}
+
 void rotireMotor() {
-  escMotor.write(120);
-  delay(5000);
-  escMotor.detach();
+  int untilNowMillis = currentMillis - startMillis;
+  if (untilNowMillis >= 12000) {
+    escMotor.detach();
+  } else if (untilNowMillis >= 9000) {
+    escMotor.write(120);
+  } else if(untilNowMillis >= 5000) {
+    escMotor.write(150);  
+  }
 }
